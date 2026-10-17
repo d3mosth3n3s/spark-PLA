@@ -31,7 +31,7 @@ After it's all finished you can open dashboard.html in a browser and upload `job
 # Screenshots
 
 This is what the live view will look like
-![alt text](image.png)
+<img width="1923" height="1049" alt="image" src="https://github.com/user-attachments/assets/6c70b550-c7fe-44bb-89b3-e80b218e8878" />
 
 This is what the data dashboard will look like
-![alt text](image-1.png)
+<img width="1575" height="1465" alt="image-1" src="https://github.com/user-attachments/assets/c0cc36d7-c61a-432c-b85f-1309d50b2c20" />
