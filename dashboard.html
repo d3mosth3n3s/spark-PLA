@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wikipedia Pageviews Explorer</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #222222;
+        --mut: #555555;
+        --card: #eef2fa;
+        --acc: #1d7d28;
+        --line: #99a3bd;
+        --warn: #cc0000;
+        --navy: #1b3a6b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: #c9d3e3;
+      }
+      body {
+        margin: 20px auto;
+        max-width: 1000px;
+        padding: 20px;
+        font:
+          12px/1.5 Verdana,
+          Geneva,
+          Tahoma,
+          sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--navy);
+        box-shadow: 4px 4px 0 #8f9bb5;
+      }
+      h1 {
+        margin: -20px -20px 14px;
+        padding: 12px 20px;
+        font:
+          bold 22px "Trebuchet MS",
+          Verdana,
+          sans-serif;
+        color: #fff;
+        text-shadow: 1px 1px 0 #000;
+        background: linear-gradient(#4a72b8, var(--navy));
+        border-bottom: 3px solid #ff9900;
+      }
+      .sub {
+        color: var(--mut);
+        margin: 0 0 14px;
+        font-style: italic;
+      }
+      .bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      button,
+      input[type="text"] {
+        font:
+          12px Verdana,
+          Geneva,
+          sans-serif;
+        color: #000;
+        padding: 4px 12px;
+      }
+      input[type="text"] {
+        background: #fff;
+        border: 2px inset #ccc;
+      }
+      button {
+        cursor: pointer;
+        background: linear-gradient(#ffffff, #d4d0c8);
+        border: 2px outset #eee;
+      }
+      button:active {
+        border-style: inset;
+      }
+      .tabs {
+        gap: 3px;
+        align-items: flex-end;
+        margin-bottom: 0;
+        border-bottom: 2px solid var(--navy);
+      }
+      .tabs button {
+        background: linear-gradient(#f4f4f4, #cfd3dc);
+        border: 1px solid #888;
+        border-bottom: none;
+        border-radius: 6px 6px 0 0;
+        padding: 5px 16px;
+      }
+      .tabs button.on {
+        background: #fff;
+        color: var(--navy);
+        font-weight: bold;
+        border-color: var(--navy);
+        margin-bottom: -2px;
+        padding-bottom: 7px;
+      }
+      .banner {
+        background: #ffffcc;
+        border: 1px solid #cccc66;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+      }
+      .panel {
+        display: none;
+        border: 1px solid var(--navy);
+        border-top: none;
+        padding: 12px;
+        background: #fcfdff;
+      }
+      .panel.on {
+        display: block;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #8a9bc0;
+      }
+      td,
+      th {
+        padding: 4px 8px;
+        text-align: left;
+        border-bottom: 1px dotted var(--line);
+      }
+      th {
+        color: var(--navy);
+        font-weight: bold;
+        background: linear-gradient(#e8eefa, #b9c7e3);
+        border: 1px solid #8a9bc0;
+      }
+      tbody tr:nth-child(even) td {
+        background: var(--card);
+      }
+      td.n {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      tr[data-t] {
+        cursor: pointer;
+      }
+      tr[data-t]:hover td {
+        background: #ffffaa;
+      }
+      .meter {
+        height: 10px;
+        min-width: 2px;
+        background: linear-gradient(#7ad67a, var(--acc));
+        border: 1px solid #0b4d12;
+      }
+      .tag {
+        font-size: 10px;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: #fff;
+        background: var(--warn);
+        padding: 0 4px;
+        margin-left: 6px;
+      }
+      .note {
+        color: var(--mut);
+        font-size: 11px;
+        margin: 8px 0;
+      }
+      .chart {
+        position: relative;
+        height: 340px;
+        background: #fff;
+        border: 2px inset #ccc;
+      }
+      label {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .foot {
+        margin-top: 18px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+        text-align: center;
+        color: var(--mut);
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Wikipedia Pageviews Explorer</h1>
+    <p class="sub" id="scope">
+      Load the JSON produced by export_dashboard_data.py
+    </p>
+
+    <div class="bar">
+      <input type="file" id="file" accept=".json" />
+
+      <label
+        ><input type="checkbox" id="hide" checked disabled /> Hide noise (Main
+        Page, Special:, Talk:, etc.)</label
+      >
+    </div>
+    <div class="banner" id="banner" hidden>
+      Showing SYNTHETIC demo data, not real Wikipedia numbers.
+    </div>
+
+    <div class="tabs bar" id="tabs">
+      <button data-p="top" class="on">Top pages</button>
+      <button data-p="hourly">Hourly view</button>
+    </div>
+
+    <div class="panel on" id="top">
+      <div class="note" id="topnote"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Page</th>
+            <th style="width: 30%"></th>
+            <th class="n">Views</th>
+          </tr>
+        </thead>
+        <tbody id="topbody"></tbody>
+      </table>
+      <div class="note">Click a row to see its hourly pattern.</div>
+    </div>
+
+    <div class="panel" id="hourly">
+      <div class="bar">
+        <input
+          type="text"
+          id="q"
+          list="titles"
+          placeholder="Search a page in the exported data"
+          size="38"
+        />
+        <span class="note" id="hnote"></span>
+      </div>
+      <datalist id="titles"></datalist>
+      <div class="chart"><canvas id="hchart"></canvas></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const NOISE =
+        /^(Main_Page|404\.php|Special:|Talk:|User:|User_talk:|Wikipedia:|Wikipedia_talk:|File:|File_talk:|MediaWiki:|Template:|Template_talk:|Help:|Category:|Category_talk:|Portal:|Draft:|Module:|XHamster$|TimedText:)/i;
+      const isNoise = (t) => NOISE.test(t) || t === "-";
+      const dec = (t) => {
+        try {
+          return decodeURIComponent(t).replace(/_/g, " ");
+        } catch {
+          return t.replace(/_/g, " ");
+        }
+      };
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      const fmt = (n) => Number(n).toLocaleString();
+      const HOURS = Array.from({ length: 24 }, (_, h) =>
+        String(h).padStart(2, "0"),
+      );
+      const COLORS = [
+        "#3b6fd4",
+        "#e4572e",
+        "#2e9e6b",
+        "#c28b00",
+        "#8e5bd6",
+        "#d6457a",
+        "#0f9bb3",
+        "#7a8699",
+      ];
+      let D = null,
+        charts = {};
+
+      function chart(id, datasets, title) {
+        if (charts[id]) charts[id].destroy();
+        charts[id] = new Chart($(id), {
+          type: "line",
+          data: { labels: HOURS, datasets },
+          options: {
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: { title: { display: !!title, text: title } },
+            scales: {
+              x: { title: { display: true, text: "Hour (UTC)" } },
+              y: { beginAtZero: true },
+            },
+          },
+        });
+      }
+
+      function setData(d, demo) {
+        D = d;
+        $("banner").hidden = !demo;
+        $("scope").textContent = d.scope || "";
+        $("titles").innerHTML = Object.keys(d.series)
+          .map((t) => `<option value="${esc(dec(t))}">`)
+          .join("");
+        render();
+      }
+
+      function render() {
+        if (!D) return;
+        const hide = $("hide").checked;
+        const keep = (t) => !hide || !isNoise(t);
+
+        const top = D.top.filter((r) => keep(r.title));
+        const shown = top.slice(0, 25),
+          max = shown.length ? shown[0].views : 1;
+        $("topbody").innerHTML = shown
+          .map((r, i) => {
+            const noisy = isNoise(r.title);
+            return (
+              `<tr data-t="${esc(r.title)}"><td>${i + 1}</td><td>${esc(dec(r.title))}${noisy ? '<span class="tag">noise</span>' : ""}</td>` +
+              `<td><div class="meter" style="width:${((100 * r.views) / max).toFixed(1)}%"></div></td><td class="n">${fmt(r.views)}</td></tr>`
+            );
+          })
+          .join("");
+      }
+
+      function showHourly(title) {
+        const s = D.series[title];
+        $("q").value = dec(title);
+        if (!s) {
+          $("hnote").textContent = "No hourly data exported for that page.";
+          return;
+        }
+        const total = s.reduce((a, b) => a + b, 0),
+          pk = s.indexOf(Math.max(...s));
+        $("hnote").textContent =
+          `${fmt(total)} views, peak at ${HOURS[pk]}:00 UTC (${fmt(s[pk])} views)`;
+        chart("hchart", [
+          { label: dec(title), data: s, borderColor: COLORS[0], tension: 0.25 },
+        ]);
+      }
+
+      function goto(p) {
+        document
+          .querySelectorAll(".panel")
+          .forEach((x) => x.classList.toggle("on", x.id === p));
+        document
+          .querySelectorAll("#tabs button")
+          .forEach((b) => b.classList.toggle("on", b.dataset.p === p));
+      }
+
+      $("tabs").onclick = (e) => {
+        if (e.target.dataset.p) goto(e.target.dataset.p);
+      };
+      $("hide").onchange = render;
+      document.addEventListener("click", (e) => {
+        const tr = e.target.closest("tr[data-t]");
+        if (tr && D) {
+          goto("hourly");
+          showHourly(tr.dataset.t);
+        }
+      });
+      $("q").onchange = () => {
+        if (!D) return;
+        const v = $("q").value.trim().toLowerCase();
+        const hit = Object.keys(D.series).find(
+          (t) => dec(t).toLowerCase() === v,
+        );
+        hit
+          ? showHourly(hit)
+          : ($("hnote").textContent = "Not in the exported data.");
+      };
+      $("file").onchange = (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            setData(JSON.parse(r.result), false);
+          } catch (err) {
+            alert("Could not read that file: " + err.message);
+          }
+        };
+        r.readAsText(f);
+      };
+
+      function demoData() {
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const curve = (base, ph) =>
+          HOURS.map((_, h) =>
+            Math.round(
+              base *
+                (1 + 0.4 * Math.cos(((h - ph) / 24) * 2 * Math.PI)) *
+                rnd(0.92, 1.08),
+            ),
+          );
+        const series = {};
+        [
+          ["Main_Page", 90000, 14],
+          ["Special:Search", 60000, 15],
+          ["Talk:Moon", 3000, 13],
+          ["Wikipedia:Featured_articles", 2500, 12],
+          ["Moon", 8000, 20],
+          ["Pizza", 7000, 18],
+          ["Chess", 6500, 19],
+          ["Jazz", 5500, 21],
+          ["Volcano", 5000, 14],
+          ["Apache_Spark", 3500, 16],
+        ].forEach(([t, b, p]) => (series[t] = curve(b / 24, p)));
+        series["Example_Breaking_News"] = HOURS.map((_, h) =>
+          h === 15 ? 5200 : Math.round(rnd(10, 40)),
+        );
+        series["Example_Sports_Final"] = HOURS.map((_, h) =>
+          h >= 2 && h <= 4
+            ? Math.round(rnd(900, 1500))
+            : Math.round(rnd(20, 60)),
+        );
+        const stats = Object.entries(series).map(([title, v]) => {
+          const total = v.reduce((a, b) => a + b, 0),
+            peak = Math.max(...v);
+          return {
+            title,
+            total,
+            peak,
+            peak_hour: v.indexOf(peak),
+            ratio: peak / (total / 24),
+          };
+        });
+        const L = (b, ph) => curve(b, ph);
+        return {
+          scope: "DEMO: synthetic data",
+          top: stats
+            .map((s) => ({ title: s.title, views: s.total }))
+            .sort((a, b) => b.views - a.views),
+          spikes: stats
+            .filter((s) => s.total >= 1000)
+            .sort((a, b) => b.ratio - a.ratio),
+          series,
+          langs: {
+            en: L(900000, 18),
+            ja: L(250000, 11),
+            de: L(200000, 17),
+            es: L(180000, 20),
+            fr: L(150000, 18),
+          },
+        };
+      }
+
+      fetch("dashboard_data.json")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setData(d, false))
+        .catch(() => {});
+    </script>
+  </body>
+</html>

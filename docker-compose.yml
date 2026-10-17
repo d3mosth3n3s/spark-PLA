@@ -1,0 +1,45 @@
+x-spark: &spark
+  image: apache/spark:3.5.3
+  volumes:
+    - ./data:/data
+    - ./jobs:/opt/jobs
+    - ./events:/tmp/spark-events
+
+services:
+  spark-master:
+    <<: *spark
+    container_name: spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports: ["8080:8080", "7077:7077", "4040:4040"]
+
+  spark-worker-1:
+    <<: *spark
+    container_name: spark-worker-1
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment: [SPARK_WORKER_CORES=2, SPARK_WORKER_MEMORY=2g]
+    ports: ["8081:8081"]
+    depends_on: [spark-master]
+
+  spark-worker-2:
+    <<: *spark
+    container_name: spark-worker-2
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment: [SPARK_WORKER_CORES=2, SPARK_WORKER_MEMORY=2g]
+    ports: ["18082:8081"]
+    depends_on: [spark-master]
+
+  spark-worker-3:
+    <<: *spark
+    container_name: spark-worker-3
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment: [SPARK_WORKER_CORES=2, SPARK_WORKER_MEMORY=2g]
+    ports: ["18083:8081"]
+    depends_on: [spark-master]
+
+  history:
+    <<: *spark
+    container_name: spark-history
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.history.HistoryServer
+    environment:
+      [SPARK_HISTORY_OPTS=-Dspark.history.fs.logDirectory=/tmp/spark-events]
+    ports: ["18080:18080"]
