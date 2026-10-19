@@ -1,5 +1,5 @@
 # Same as export_dashboard_data.py, but caches the two aggregates that are reused,
-# so the 1.4 GB input is scanned 2 times instead of 5.
+# so the input is scanned 2 times instead of 5.
 import json
 from pyspark.sql import SparkSession, functions as F
 
