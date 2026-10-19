@@ -199,6 +199,8 @@ fig.legend(handles=[Line2D([], [], color=COLORS["done"], lw=6, label="completed 
            loc="lower center", ncol=4, frameon=False)
 fig.suptitle("Waiting for a Spark job on localhost:4040 ...", fontsize=12)
 
+plt.show(block=False)   # show the window once; the loop below never re-raises it
+
 tracker = None
 while plt.fignum_exists(fig.number):
     try:
@@ -209,4 +211,6 @@ while plt.fignum_exists(fig.number):
         draw(tracker, fig, ax1, ax2)
     except Exception:
         pass   # job not started yet, or just ended: keep showing the last frame
-    plt.pause(POLL)
+    # Not plt.pause(): on macOS it calls show() every time, which pops the window back to the front.
+    fig.canvas.draw_idle()
+    fig.canvas.start_event_loop(POLL)
